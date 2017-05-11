@@ -1,0 +1,48 @@
+setwd("~/workspace/Datascience/Kaggle/Titanic")
+train = read.csv("train.csv", stringsAsFactors = FALSE)
+test = read.csv("test.csv", stringsAsFactors = FALSE)
+
+test$Survived <- NA
+train$Survived <- as.factor(train$Survived)
+test$Survived <- as.factor(test$Survived)
+
+train$IsTrainingSet <- TRUE
+test$IsTrainingSet <- FALSE
+
+full <- rbind(train,test)
+full[full$Embarked=='',"Embarked"]<-'S'
+
+medianAge <- median(full$Age, na.rm = TRUE)
+full[is.na(full$Age),"Age"] <- medianAge
+
+medianFare <- median(full$Fare, na.rm = TRUE)
+full[is.na(full$Fare),"Fare"] <- medianFare
+
+full$Pclass <- as.factor(full$Pclass)
+full$Sex <- as.factor(full$Sex)
+full$Embarked <- as.factor(full$Embarked)
+
+train <- full[full$IsTrainingSet == TRUE,]
+test <- full[full$IsTrainingSet == FALSE,]
+
+train$Survived <- as.factor(train$Survived)
+
+equation <- "Survived ~ Age + Sex + Fare + Pclass"
+SurvivedFormula  <- as.formula(equation)
+
+install.packages("randomForest")
+library(randomForest)
+
+SurviedModel <- randomForest(formula = SurvivedFormula, data = train)
+
+featuresEquation <- "Age + Sex + Fare + Pclass"
+
+Survived <- predict(SurviedModel, newdata = test)
+
+
+PassengerId <- test$PassengerId
+
+outputData <- as.data.frame(PassengerId)
+outputData <- cbind(outputData,Survived)
+
+write.csv(outputData,"kaggle_submission.csv",row.names = FALSE)
